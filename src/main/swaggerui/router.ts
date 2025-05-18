@@ -1,15 +1,15 @@
 import swaggerUi from "swagger-ui-express";
 import dotenv from "dotenv-safe";
-import fs from "node:fs";
-import YAML from "yaml";
 import { Router } from "express";
+import { SwaggerUiService } from "./service";
 
 dotenv.config();
+
+const service = new SwaggerUiService();
 
 export const router = Router();
 
 const openapiSpecPath = process.env.OPENAPI_SPECIFICATION_FILE_PATH ?? "./openapi.yml";
-const file = fs.readFileSync(openapiSpecPath, "utf-8");
-const openapiSpec = YAML.parse(file);
+const openapiSpec = service.getOpenApiSpec(openapiSpecPath); 
 
 router.use("/", swaggerUi.serve, swaggerUi.setup(openapiSpec));

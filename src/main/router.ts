@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { router as swaggerui } from "./swaggerui";
-import { router as authentication } from "./auth";
+import { router as swaggerui } from "./swaggerui/router";
+import { router as authentication } from "./authentication/router";
 
 export const router = Router();
 

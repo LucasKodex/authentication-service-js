@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc --build",
     "clean": "tsc --build --clean",
-    "run": "node dist/main/index.js",
+    "start": "node dist/main/index.js",
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
