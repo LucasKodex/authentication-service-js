@@ -1,0 +1,6 @@
+model Role {
+    uid   String @id @default(uuid())
+    role  String @unique
+    users User[]
+    permissions Permission[]
+}

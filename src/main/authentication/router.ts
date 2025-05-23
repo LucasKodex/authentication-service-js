@@ -1,10 +1,16 @@
 import bodyParser from "body-parser";
-import { Router } from "express";
+import { Request, Response, Router } from "express";
+import { SignUpController } from "./controller/SignUpController";
+import { defaultErrorHandler } from "../middlewares/default-error-handler";
 
 export const router = Router();
 
+function placeholderHandler(req: Request, res: Response) { res.send({ todo: "TODO" }) }
+
+const signUpController = new SignUpController();
+
 router.use(bodyParser.json());
-router.post("/signup", (req, res) => { res.send("{}"); });
-router.post("/login", (req, res) => { res.send("{}"); });
-router.post("/exchange-refresh-token", (req, res) => { res.send("{}"); });
-router.post("/revoke-refresh-token", (req, res) => { res.send("{}"); });
+router.post("/signup", signUpController.handle, defaultErrorHandler);
+router.post("/login", placeholderHandler, defaultErrorHandler);
+router.post("/exchange-refresh-token", placeholderHandler, defaultErrorHandler);
+router.post("/revoke-refresh-token", placeholderHandler, defaultErrorHandler);
