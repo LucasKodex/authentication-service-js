@@ -1,12 +1,12 @@
 ## Roadmap
 
-Feature | Status
-:-----: | :----:
-Sign Up | Development Done (still needs automated tests)
-Log In  | Not Started
-Revoke Refresh Token / Revoke Session | Not Started
-Get an Access Token using Refresh Token | Not Started
-Asymmetric JWT Signing | Not Started
+Feature | Development | Tests | Documentation
+:-----: | :---------: | :---: | :-----------:
+Sign Up | ✅ | ⚙️ | ⚙️
+Log In  | ❌ | ❌ | ❌
+Revoke Refresh Token / Revoke Session | ❌ | ❌ | ❌
+Get an Access Token using Refresh Token | ❌ | ❌ | ❌
+Asymmetric JWT Signing | ❌ | ❌ | ❌
 
 ## 1. Setup and Running
 
