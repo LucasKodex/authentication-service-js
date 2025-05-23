@@ -1,3 +1,13 @@
+## Roadmap
+
+Feature | Status
+:-----: | :----:
+Sign Up | Development Done (still needs automated tests)
+Log In  | Not Started
+Revoke Refresh Token / Revoke Session | Not Started
+Get an Access Token using Refresh Token | Not Started
+Assymetric JWT Signing | Not Started
+
 ## 1. Setup and Running
 
 ### 1.1 Start your PostgreSQL database
