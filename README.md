@@ -3,9 +3,9 @@
 Feature | Development | Tests | Documentation
 :-----: | :---------: | :---: | :-----------:
 Sign Up | ✅ | ⚙️ | ⚙️
-Log In  | ❌ | ❌ | ❌
-Revoke Refresh Token / Revoke Session | ❌ | ❌ | ❌
-Get an Access Token using Refresh Token | ❌ | ❌ | ❌
+Log In  | ❌ | ❌ | ⚙️
+Revoke Refresh Token / Revoke Session | ❌ | ❌ | ⚙️
+Get an Access Token using Refresh Token | ❌ | ❌ | ⚙️
 Asymmetric JWT Signing | ❌ | ❌ | ❌
 
 ## 1. Setup and Running
