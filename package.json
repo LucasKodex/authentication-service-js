@@ -11,7 +11,8 @@
     "build": "tsc --build",
     "clean": "tsc --build --clean",
     "start": "node dist/main/index.js",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests",
+    "db:sync": "prisma generate && prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",

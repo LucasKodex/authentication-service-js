@@ -74,7 +74,17 @@ REDIS_CONNECTION_URL | Redis database URL for connection
 DEFAULT_USER_ROLE | Default role to new users (auto created if don't exists)
 JWT_SECRET_KEY | Secret key for signing JSON Web Tokens
 
-### 1.5 Running the application
+### 1.5 Synchronizing the database schema
+
+Before you be able to run the application and start using it you should make sure all the migrations has been applied to the Postgres database and the required Prisma ORM files was generated. You can run the following script:
+
+```sh
+yarn db:sync
+```
+
+It will generate the Prisma ORM files required by the application and will apply the migrations into the Postgres database previous configured in .env file
+
+### 1.6 Running the application
 
 And finally if everything did well you can run the application
 
