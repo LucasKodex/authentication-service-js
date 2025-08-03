@@ -3,7 +3,6 @@ import { Request, Response } from "express";
 import { RedisClientPoolType } from "redis";
 import jwt from "jsonwebtoken";
 import { autoInjectable, inject } from "tsyringe";
-import { getRandomValues } from "node:crypto";
 import argon2 from "argon2";
 
 interface ICredentials {
