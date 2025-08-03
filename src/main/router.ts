@@ -1,8 +1,20 @@
 import { Router } from "express";
 import { router as swaggerui } from "./swaggerui/router";
-import { router as authentication } from "./authentication/router";
+import { AuthenticationRouter } from "./authentication/router";
 
-export const router = Router();
+export class CoreRouter {
+    private _router: Router;
 
-router.use("/api-docs", swaggerui);
-router.use("/", authentication);
+    constructor() {
+        this._router = Router();
+        
+        this._router.use("/api-docs", swaggerui);
+        this._router.use("/", new AuthenticationRouter().router);
+    }
+
+    get router(): Router {
+        return this._router;
+    }
+}
+
+export default CoreRouter;

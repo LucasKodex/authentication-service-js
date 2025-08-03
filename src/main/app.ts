@@ -1,10 +1,21 @@
 import { Application } from "express";
 import express from "express";
 import dotenv from "dotenv-safe";
-import { router } from "./router";
+import { CoreRouter } from "./router";
 
 dotenv.config();
 
-export const app: Application = express();
+export class App {
+    private _app: Application;
+    
+    constructor() {
+        this._app = express();
+        this._app.use(new CoreRouter().router);
+    }
 
-app.use(router);
+    get app(): Application {
+        return this._app;
+    }
+}
+
+export default App;
