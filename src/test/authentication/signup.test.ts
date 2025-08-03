@@ -22,6 +22,7 @@ describe("POST /signup", function () {
     const VALID_LOGIN_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-";
     const MIN_LOGIN_LENGTH = 5;
     const MAX_LOGIN_LENGTH = 100;
+    const MIN_PASSWORD_LENGTH = 8;
 
     beforeAll(function () {
         const mock_di_container = new MockDIContainer();
@@ -44,6 +45,74 @@ describe("POST /signup", function () {
         const MOCKED_CREATED_USER = {
             uid: randomUUID(),
             login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, { min: MIN_LOGIN_LENGTH, max: MAX_LOGIN_LENGTH }),
+            hashed_password: "$2b$12$ssxpjK4ee9pgbZd8EaQyE.Prmy3c2AVxPdrQRzxoYtfWKMJ/li7zu",
+            role_uid: randomUUID(),
+            role: {
+                uid: randomUUID(),
+                role: "USER",
+            },
+        };
+        prisma_mock.user.create.mockReturnValue(MOCKED_CREATED_USER);
+
+        bcrypt_mock.hash.mockReturnValue(MOCKED_CREATED_USER.hashed_password);
+
+        const MOCKED_JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3VpZCI6ImI4ODViNDMxLTVhYjQtNDg3Mi04ODY4LWM2ODEzMmM5MzkwZiIsInVzZXJfbG9naW4iOiJtb2NrZWQudXNlciIsInVzZXJfcm9sZSI6Ik1PQ0tFRF9VU0VSIiwiaWF0IjoxMDY4NzQzNDYzfQ.Rg_b6sVDIIIOGaMHt0LDUntpvuTmxMeDfgatLhz8xnY";
+        jwt_mock.sign .mockReturnValue(MOCKED_JWT_TOKEN)
+
+        
+
+        const request_body = {
+            login: MOCKED_CREATED_USER.login,
+            password: faker.string.sample({ min: MIN_PASSWORD_LENGTH, max: 1_000 }),
+        };
+        const response = await request(app)
+            .post(SIGNUP_ENDPOINT)
+            .send(request_body)
+            .expect(201);
+        
+        const EXPECTED_DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE;
+
+        const SALT_ROUNDS = 12;
+        expect(bcrypt_mock.hash).toHaveBeenCalledWith(request_body.password, SALT_ROUNDS);
+        expect(bcrypt_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
+
+        expect(prisma_mock.user.create).toHaveBeenCalledWith({
+            data: {
+                login: request_body.login,
+                hashed_password: MOCKED_CREATED_USER.hashed_password,
+                role: {
+                    connectOrCreate: {
+                        where: {
+                            role: EXPECTED_DEFAULT_USER_ROLE,
+                        },
+                        create: {
+                            role: EXPECTED_DEFAULT_USER_ROLE,
+                        },
+                    },
+                },
+            },
+            include: {
+                role: true,
+            },
+        });
+
+        expect(jwt_mock.sign).toHaveBeenLastCalledWith({
+            user_uid: MOCKED_CREATED_USER.uid,
+            user_login: request_body.login,
+            user_role: EXPECTED_DEFAULT_USER_ROLE,
+        }, process.env.JWT_SECRET_KEY);
+
+        expect(redis_mock.set).toHaveBeenCalledWith(`session:${MOCKED_CREATED_USER.uid}`, MOCKED_JWT_TOKEN);
+
+        const response_body = response.body;
+        expect(response_body).toHaveProperty("refresh_token", MOCKED_JWT_TOKEN);
+    });
+
+    it(`should register a user with a ${MIN_LOGIN_LENGTH} character login`, async function () {
+        // spying mocked dependecy injection
+        const MOCKED_CREATED_USER = {
+            uid: randomUUID(),
+            login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, MIN_LOGIN_LENGTH),
             hashed_password: "$2b$12$ssxpjK4ee9pgbZd8EaQyE.Prmy3c2AVxPdrQRzxoYtfWKMJ/li7zu",
             role_uid: randomUUID(),
             role: {
@@ -102,5 +171,289 @@ describe("POST /signup", function () {
 
         const response_body = response.body;
         expect(response_body).toHaveProperty("refresh_token", MOCKED_JWT_TOKEN);
+    });
+
+    it(`should register a user with a ${MAX_LOGIN_LENGTH} character login`, async function () {
+        // spying mocked dependecy injection
+        const MOCKED_CREATED_USER = {
+            uid: randomUUID(),
+            login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, MAX_LOGIN_LENGTH),
+            hashed_password: "$2b$12$ssxpjK4ee9pgbZd8EaQyE.Prmy3c2AVxPdrQRzxoYtfWKMJ/li7zu",
+            role_uid: randomUUID(),
+            role: {
+                uid: randomUUID(),
+                role: "USER",
+            },
+        };
+        prisma_mock.user.create.mockReturnValue(MOCKED_CREATED_USER);
+
+        bcrypt_mock.hash.mockReturnValue(MOCKED_CREATED_USER.hashed_password);
+
+        const MOCKED_JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3VpZCI6ImI4ODViNDMxLTVhYjQtNDg3Mi04ODY4LWM2ODEzMmM5MzkwZiIsInVzZXJfbG9naW4iOiJtb2NrZWQudXNlciIsInVzZXJfcm9sZSI6Ik1PQ0tFRF9VU0VSIiwiaWF0IjoxMDY4NzQzNDYzfQ.Rg_b6sVDIIIOGaMHt0LDUntpvuTmxMeDfgatLhz8xnY";
+        jwt_mock.sign .mockReturnValue(MOCKED_JWT_TOKEN)
+
+        
+
+        const request_body = { login: MOCKED_CREATED_USER.login, password: "password" };
+        const response = await request(app)
+            .post(SIGNUP_ENDPOINT)
+            .send(request_body)
+            .expect(201);
+        
+        const EXPECTED_DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE;
+
+        const SALT_ROUNDS = 12;
+        expect(bcrypt_mock.hash).toHaveBeenCalledWith(request_body.password, SALT_ROUNDS);
+        expect(bcrypt_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
+
+        expect(prisma_mock.user.create).toHaveBeenCalledWith({
+            data: {
+                login: request_body.login,
+                hashed_password: MOCKED_CREATED_USER.hashed_password,
+                role: {
+                    connectOrCreate: {
+                        where: {
+                            role: EXPECTED_DEFAULT_USER_ROLE,
+                        },
+                        create: {
+                            role: EXPECTED_DEFAULT_USER_ROLE,
+                        },
+                    },
+                },
+            },
+            include: {
+                role: true,
+            },
+        });
+
+        expect(jwt_mock.sign).toHaveBeenLastCalledWith({
+            user_uid: MOCKED_CREATED_USER.uid,
+            user_login: request_body.login,
+            user_role: EXPECTED_DEFAULT_USER_ROLE,
+        }, process.env.JWT_SECRET_KEY);
+
+        expect(redis_mock.set).toHaveBeenCalledWith(`session:${MOCKED_CREATED_USER.uid}`, MOCKED_JWT_TOKEN);
+
+        const response_body = response.body;
+        expect(response_body).toHaveProperty("refresh_token", MOCKED_JWT_TOKEN);
+    });
+
+    
+    it(`should register a user with a ${MIN_PASSWORD_LENGTH} character password`, async function () {
+        // spying mocked dependecy injection
+        const MOCKED_CREATED_USER = {
+            uid: randomUUID(),
+            login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, MIN_LOGIN_LENGTH),
+            hashed_password: "$2b$12$ssxpjK4ee9pgbZd8EaQyE.Prmy3c2AVxPdrQRzxoYtfWKMJ/li7zu",
+            role_uid: randomUUID(),
+            role: {
+                uid: randomUUID(),
+                role: "USER",
+            },
+        };
+        prisma_mock.user.create.mockReturnValue(MOCKED_CREATED_USER);
+
+        bcrypt_mock.hash.mockReturnValue(MOCKED_CREATED_USER.hashed_password);
+
+        const MOCKED_JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3VpZCI6ImI4ODViNDMxLTVhYjQtNDg3Mi04ODY4LWM2ODEzMmM5MzkwZiIsInVzZXJfbG9naW4iOiJtb2NrZWQudXNlciIsInVzZXJfcm9sZSI6Ik1PQ0tFRF9VU0VSIiwiaWF0IjoxMDY4NzQzNDYzfQ.Rg_b6sVDIIIOGaMHt0LDUntpvuTmxMeDfgatLhz8xnY";
+        jwt_mock.sign .mockReturnValue(MOCKED_JWT_TOKEN)
+
+        const request_body = {
+            login: MOCKED_CREATED_USER.login,
+            password: faker.internet.password({ length: MIN_PASSWORD_LENGTH }),
+        };
+        const response = await request(app)
+            .post(SIGNUP_ENDPOINT)
+            .send(request_body)
+            .expect(201);
+        
+        const EXPECTED_DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE;
+
+        const SALT_ROUNDS = 12;
+        expect(bcrypt_mock.hash).toHaveBeenCalledWith(request_body.password, SALT_ROUNDS);
+        expect(bcrypt_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
+
+        expect(prisma_mock.user.create).toHaveBeenCalledWith({
+            data: {
+                login: request_body.login,
+                hashed_password: MOCKED_CREATED_USER.hashed_password,
+                role: {
+                    connectOrCreate: {
+                        where: {
+                            role: EXPECTED_DEFAULT_USER_ROLE,
+                        },
+                        create: {
+                            role: EXPECTED_DEFAULT_USER_ROLE,
+                        },
+                    },
+                },
+            },
+            include: {
+                role: true,
+            },
+        });
+
+        expect(jwt_mock.sign).toHaveBeenLastCalledWith({
+            user_uid: MOCKED_CREATED_USER.uid,
+            user_login: request_body.login,
+            user_role: EXPECTED_DEFAULT_USER_ROLE,
+        }, process.env.JWT_SECRET_KEY);
+
+        expect(redis_mock.set).toHaveBeenCalledWith(`session:${MOCKED_CREATED_USER.uid}`, MOCKED_JWT_TOKEN);
+
+        const response_body = response.body;
+        expect(response_body).toHaveProperty("refresh_token", MOCKED_JWT_TOKEN);
+    });
+
+    describe("invalid login", function () {
+        it("should not register a user with a numeric type login", async function () {
+            const request_body = {
+                login: faker.number.int({ min: 10_000_000, max: 999_999_999 }),
+                password: "password",
+            };
+            const response = await request(app)
+                .post(SIGNUP_ENDPOINT)
+                .send(request_body)
+                .expect(400);
+                
+            const response_body = response.body;
+            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("message", "Login must be a string value");
+        });
+
+        it("should not register a user with a null login", async function () {
+            const request_body = {
+                login: null,
+                password: "password",
+            };
+            const response = await request(app)
+                .post(SIGNUP_ENDPOINT)
+                .send(request_body)
+                .expect(400);
+                
+            const response_body = response.body;
+            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("message", "Login must be a string value");
+        });
+        
+        it("should not register a user with a undefined login", async function () {
+            const request_body = {
+                password: "password",
+            };
+            const response = await request(app)
+                .post(SIGNUP_ENDPOINT)
+                .send(request_body)
+                .expect(400);
+                
+            const response_body = response.body;
+            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("message", "Login must be a string value");
+        });
+
+        it("should not register a user with a login using invalid characters", async function () {
+            const request_body = {
+                login: "valid.login.until.$",
+                password: "password",
+            };
+            const response = await request(app)
+                .post(SIGNUP_ENDPOINT)
+                .send(request_body)
+                .expect(400);
+                
+            const response_body = response.body;
+            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("message", "Login must have only valid characters [0-9a-zA-Z._-]");
+        });
+        
+        it(`should not register a user with a login less than ${MIN_LOGIN_LENGTH} characters`, async function () {
+            const request_body = {
+                login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, MIN_LOGIN_LENGTH - 1),
+                password: "password",
+            };
+            const response = await request(app)
+                .post(SIGNUP_ENDPOINT)
+                .send(request_body)
+                .expect(400);
+                
+            const response_body = response.body;
+            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("message", "Login must have between 5 and 100 characters (both included)");
+        });
+        
+        it(`should not register a user with a login more than ${MAX_LOGIN_LENGTH} characters`, async function () {
+            const request_body = {
+                login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, MAX_LOGIN_LENGTH + 1),
+                password: "password"
+            };
+            const response = await request(app)
+                .post(SIGNUP_ENDPOINT)
+                .send(request_body)
+                .expect(400);
+                
+            const response_body = response.body;
+            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("message", "Login must have between 5 and 100 characters (both included)");
+        });
+    });
+    
+    describe("invalid password", function () {
+        it("should not register a user with a numeric type password", async function () {
+            const request_body = {
+                login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, { min: MIN_LOGIN_LENGTH, max: MAX_LOGIN_LENGTH }),
+                password: faker.number.int({ min: 10_000_000, max: 999_999_999 }),
+            };
+            const response = await request(app)
+                .post(SIGNUP_ENDPOINT)
+                .send(request_body)
+                .expect(400);
+                
+            const response_body = response.body;
+            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("message", "Password must be a string value");
+        });
+
+        it("should not register a user with a null password", async function () {
+            const request_body = {
+                login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, { min: MIN_LOGIN_LENGTH, max: MAX_LOGIN_LENGTH }),
+                password: null,
+            };
+            const response = await request(app)
+                .post(SIGNUP_ENDPOINT)
+                .send(request_body)
+                .expect(400);
+                
+            const response_body = response.body;
+            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("message", "Password must be a string value");
+        });
+        
+        it("should not register a user with a undefined password", async function () {
+            const request_body = {
+                login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, { min: MIN_LOGIN_LENGTH, max: MAX_LOGIN_LENGTH }),
+            };
+            const response = await request(app)
+                .post(SIGNUP_ENDPOINT)
+                .send(request_body)
+                .expect(400);
+                
+            const response_body = response.body;
+            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("message", "Password must be a string value");
+        });
+        
+        it(`should not register a user with a password less than ${MIN_PASSWORD_LENGTH}`, async function () {
+            const request_body = {
+                login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, { min: MIN_LOGIN_LENGTH, max: MAX_LOGIN_LENGTH }),
+                password: faker.internet.password({ length: MIN_PASSWORD_LENGTH - 1 }),
+            };
+            const response = await request(app)
+                .post(SIGNUP_ENDPOINT)
+                .send(request_body)
+                .expect(400);
+                
+            const response_body = response.body;
+            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("message", "Password must have at least 8 characters");
+        });
     });
 });

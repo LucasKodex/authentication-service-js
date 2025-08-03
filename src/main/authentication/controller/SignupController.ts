@@ -81,8 +81,6 @@ export class SignupController {
         const password: string = credentials.password;
         const isPasswordCharactersLengthValid = password.length >= 8;
         if (!isPasswordCharactersLengthValid) throw new Error("Password must have at least 8 characters");
-        const isPasswordByteLengthValid = new Blob([ password ]).size <= 72;
-        if (!isPasswordByteLengthValid) throw new Error("Password cannot have more than 72 bytes");
         
         return { login, password };
     }
