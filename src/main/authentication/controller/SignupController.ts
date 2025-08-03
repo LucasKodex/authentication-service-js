@@ -3,7 +3,8 @@ import { Request, Response } from "express";
 import { RedisClientPoolType } from "redis";
 import jwt from "jsonwebtoken";
 import { autoInjectable, inject } from "tsyringe";
-import bcrypt from "bcrypt";
+import { getRandomValues } from "node:crypto";
+import argon2 from "argon2";
 
 interface ICredentials {
     login?: unknown;
@@ -20,14 +21,13 @@ export class SignupController {
     constructor (
         private readonly prisma?: PrismaClient,
         @inject("RedisClientPoolType") private readonly redis?: RedisClientPoolType,
-        @inject("bcrypt_lib") private readonly bcrypt_lib?: typeof bcrypt,
+        @inject("argon2_lib") private readonly argon2_lib?: typeof argon2,
         @inject("jwt_lib") private readonly jwt_lib?: typeof jwt,
     ) {};
 
     async handle(req: Request, res: Response) {
         const credentials = SignupController.normalizeCredentials(req.body);
-        const SALT_ROUNDS = 12;
-        const password_hash = await this.bcrypt_lib!.hash(credentials.password, SALT_ROUNDS);
+        const password_hash = await this.argon2_lib!.hash(credentials.password);
         
         // try to save user on database, could trhow a non unique constraint error
         const DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE ?? "USER";

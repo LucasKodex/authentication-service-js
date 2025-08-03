@@ -5,7 +5,7 @@ import MockDIContainer from "../shared/mocks/MockDIContainer";
 import { Application } from "express";
 import PrismaMock from "../shared/mocks/PrismaMock";
 import RedisMock from "../shared/mocks/RedisMock";
-import BcryptMock from "../shared/mocks/BcryptMock";
+import Argon2Mock from "../shared/mocks/Argon2Mock";
 import JwtMock from "../shared/mocks/JwtMock";
 import { faker } from '@faker-js/faker';
 import { randomUUID } from "node:crypto";
@@ -16,7 +16,7 @@ describe("POST /signup", function () {
     let app: Application;
     let prisma_mock: PrismaMock;
     let redis_mock: RedisMock;
-    let bcrypt_mock: BcryptMock;
+    let argon2_mock: Argon2Mock;
     let jwt_mock: JwtMock;
 
     const VALID_LOGIN_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-";
@@ -30,7 +30,7 @@ describe("POST /signup", function () {
         ({
             prisma_mock,
             redis_mock,
-            bcrypt_mock,
+            argon2_mock,
             jwt_mock,
         } = mock_di_container.register_all());
         app = new App().app;
@@ -45,7 +45,7 @@ describe("POST /signup", function () {
         const MOCKED_CREATED_USER = {
             uid: randomUUID(),
             login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, { min: MIN_LOGIN_LENGTH, max: MAX_LOGIN_LENGTH }),
-            hashed_password: "$2b$12$ssxpjK4ee9pgbZd8EaQyE.Prmy3c2AVxPdrQRzxoYtfWKMJ/li7zu",
+            hashed_password: "$argon2id$v=19$m=65536,t=3,p=4$GyEdQCgy7miuGRhpWC4Z6w$lVFRrcxFwltIn6S+ECOjQqsG1anZWiLZje0d2p9+U4M",
             role_uid: randomUUID(),
             role: {
                 uid: randomUUID(),
@@ -54,7 +54,7 @@ describe("POST /signup", function () {
         };
         prisma_mock.user.create.mockReturnValue(MOCKED_CREATED_USER);
 
-        bcrypt_mock.hash.mockReturnValue(MOCKED_CREATED_USER.hashed_password);
+        argon2_mock.hash.mockReturnValue(MOCKED_CREATED_USER.hashed_password);
 
         const MOCKED_JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3VpZCI6ImI4ODViNDMxLTVhYjQtNDg3Mi04ODY4LWM2ODEzMmM5MzkwZiIsInVzZXJfbG9naW4iOiJtb2NrZWQudXNlciIsInVzZXJfcm9sZSI6Ik1PQ0tFRF9VU0VSIiwiaWF0IjoxMDY4NzQzNDYzfQ.Rg_b6sVDIIIOGaMHt0LDUntpvuTmxMeDfgatLhz8xnY";
         jwt_mock.sign .mockReturnValue(MOCKED_JWT_TOKEN)
@@ -73,8 +73,8 @@ describe("POST /signup", function () {
         const EXPECTED_DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE;
 
         const SALT_ROUNDS = 12;
-        expect(bcrypt_mock.hash).toHaveBeenCalledWith(request_body.password, SALT_ROUNDS);
-        expect(bcrypt_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
+        expect(argon2_mock.hash).toHaveBeenCalledWith(request_body.password);
+        expect(argon2_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
 
         expect(prisma_mock.user.create).toHaveBeenCalledWith({
             data: {
@@ -113,7 +113,7 @@ describe("POST /signup", function () {
         const MOCKED_CREATED_USER = {
             uid: randomUUID(),
             login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, MIN_LOGIN_LENGTH),
-            hashed_password: "$2b$12$ssxpjK4ee9pgbZd8EaQyE.Prmy3c2AVxPdrQRzxoYtfWKMJ/li7zu",
+            hashed_password: "$argon2id$v=19$m=65536,t=3,p=4$GyEdQCgy7miuGRhpWC4Z6w$lVFRrcxFwltIn6S+ECOjQqsG1anZWiLZje0d2p9+U4M",
             role_uid: randomUUID(),
             role: {
                 uid: randomUUID(),
@@ -122,7 +122,7 @@ describe("POST /signup", function () {
         };
         prisma_mock.user.create.mockReturnValue(MOCKED_CREATED_USER);
 
-        bcrypt_mock.hash.mockReturnValue(MOCKED_CREATED_USER.hashed_password);
+        argon2_mock.hash.mockReturnValue(MOCKED_CREATED_USER.hashed_password);
 
         const MOCKED_JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3VpZCI6ImI4ODViNDMxLTVhYjQtNDg3Mi04ODY4LWM2ODEzMmM5MzkwZiIsInVzZXJfbG9naW4iOiJtb2NrZWQudXNlciIsInVzZXJfcm9sZSI6Ik1PQ0tFRF9VU0VSIiwiaWF0IjoxMDY4NzQzNDYzfQ.Rg_b6sVDIIIOGaMHt0LDUntpvuTmxMeDfgatLhz8xnY";
         jwt_mock.sign .mockReturnValue(MOCKED_JWT_TOKEN)
@@ -138,8 +138,8 @@ describe("POST /signup", function () {
         const EXPECTED_DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE;
 
         const SALT_ROUNDS = 12;
-        expect(bcrypt_mock.hash).toHaveBeenCalledWith(request_body.password, SALT_ROUNDS);
-        expect(bcrypt_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
+        expect(argon2_mock.hash).toHaveBeenCalledWith(request_body.password);
+        expect(argon2_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
 
         expect(prisma_mock.user.create).toHaveBeenCalledWith({
             data: {
@@ -178,7 +178,7 @@ describe("POST /signup", function () {
         const MOCKED_CREATED_USER = {
             uid: randomUUID(),
             login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, MAX_LOGIN_LENGTH),
-            hashed_password: "$2b$12$ssxpjK4ee9pgbZd8EaQyE.Prmy3c2AVxPdrQRzxoYtfWKMJ/li7zu",
+            hashed_password: "$argon2id$v=19$m=65536,t=3,p=4$GyEdQCgy7miuGRhpWC4Z6w$lVFRrcxFwltIn6S+ECOjQqsG1anZWiLZje0d2p9+U4M",
             role_uid: randomUUID(),
             role: {
                 uid: randomUUID(),
@@ -187,7 +187,7 @@ describe("POST /signup", function () {
         };
         prisma_mock.user.create.mockReturnValue(MOCKED_CREATED_USER);
 
-        bcrypt_mock.hash.mockReturnValue(MOCKED_CREATED_USER.hashed_password);
+        argon2_mock.hash.mockReturnValue(MOCKED_CREATED_USER.hashed_password);
 
         const MOCKED_JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3VpZCI6ImI4ODViNDMxLTVhYjQtNDg3Mi04ODY4LWM2ODEzMmM5MzkwZiIsInVzZXJfbG9naW4iOiJtb2NrZWQudXNlciIsInVzZXJfcm9sZSI6Ik1PQ0tFRF9VU0VSIiwiaWF0IjoxMDY4NzQzNDYzfQ.Rg_b6sVDIIIOGaMHt0LDUntpvuTmxMeDfgatLhz8xnY";
         jwt_mock.sign .mockReturnValue(MOCKED_JWT_TOKEN)
@@ -203,8 +203,8 @@ describe("POST /signup", function () {
         const EXPECTED_DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE;
 
         const SALT_ROUNDS = 12;
-        expect(bcrypt_mock.hash).toHaveBeenCalledWith(request_body.password, SALT_ROUNDS);
-        expect(bcrypt_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
+        expect(argon2_mock.hash).toHaveBeenCalledWith(request_body.password);
+        expect(argon2_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
 
         expect(prisma_mock.user.create).toHaveBeenCalledWith({
             data: {
@@ -244,7 +244,7 @@ describe("POST /signup", function () {
         const MOCKED_CREATED_USER = {
             uid: randomUUID(),
             login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, MIN_LOGIN_LENGTH),
-            hashed_password: "$2b$12$ssxpjK4ee9pgbZd8EaQyE.Prmy3c2AVxPdrQRzxoYtfWKMJ/li7zu",
+            hashed_password: "$argon2id$v=19$m=65536,t=3,p=4$GyEdQCgy7miuGRhpWC4Z6w$lVFRrcxFwltIn6S+ECOjQqsG1anZWiLZje0d2p9+U4M",
             role_uid: randomUUID(),
             role: {
                 uid: randomUUID(),
@@ -253,7 +253,7 @@ describe("POST /signup", function () {
         };
         prisma_mock.user.create.mockReturnValue(MOCKED_CREATED_USER);
 
-        bcrypt_mock.hash.mockReturnValue(MOCKED_CREATED_USER.hashed_password);
+        argon2_mock.hash.mockReturnValue(MOCKED_CREATED_USER.hashed_password);
 
         const MOCKED_JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3VpZCI6ImI4ODViNDMxLTVhYjQtNDg3Mi04ODY4LWM2ODEzMmM5MzkwZiIsInVzZXJfbG9naW4iOiJtb2NrZWQudXNlciIsInVzZXJfcm9sZSI6Ik1PQ0tFRF9VU0VSIiwiaWF0IjoxMDY4NzQzNDYzfQ.Rg_b6sVDIIIOGaMHt0LDUntpvuTmxMeDfgatLhz8xnY";
         jwt_mock.sign .mockReturnValue(MOCKED_JWT_TOKEN)
@@ -270,8 +270,8 @@ describe("POST /signup", function () {
         const EXPECTED_DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE;
 
         const SALT_ROUNDS = 12;
-        expect(bcrypt_mock.hash).toHaveBeenCalledWith(request_body.password, SALT_ROUNDS);
-        expect(bcrypt_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
+        expect(argon2_mock.hash).toHaveBeenCalledWith(request_body.password);
+        expect(argon2_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
 
         expect(prisma_mock.user.create).toHaveBeenCalledWith({
             data: {

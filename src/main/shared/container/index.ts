@@ -2,8 +2,8 @@ import "reflect-metadata";
 import { PrismaClient } from "@prisma/client";
 import { createClientPool } from "redis";
 import { container } from "tsyringe";
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import argon2 from "argon2";
 
 export class ContainerWrapper {
     private _container;
@@ -12,7 +12,7 @@ export class ContainerWrapper {
         this._container = container;
     }
 
-    initialize() {
+    async initialize() {
         const prisma = new PrismaClient();
         this._container.registerInstance(PrismaClient, prisma);
 
@@ -20,7 +20,7 @@ export class ContainerWrapper {
         redis.connect();
         this._container.registerInstance("RedisClientPoolType", redis);
 
-        this._container.registerInstance("bcrypt_lib", bcrypt);
+        this._container.registerInstance("argon2_lib", argon2);
 
         this._container.registerInstance("jwt_lib", jwt);
     }

@@ -9,7 +9,7 @@ const port: number = Number.parseInt(process.env.SERVER_PORT ?? "80");
 const hostname: string = process.env.SERVER_HOSTNAME ?? "localhost";
 
 const container = new ContainerWrapper();
-container.initialize();
+await container.initialize();
 const app = new App().app;
 
 app.listen(port, hostname, function () {
