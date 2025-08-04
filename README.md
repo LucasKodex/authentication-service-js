@@ -2,7 +2,7 @@
 
 Feature | Development | Tests | Documentation
 :-----: | :---------: | :---: | :-----------:
-Sign Up | ✅ | ⚙️ | ⚙️
+Sign Up | ✅ | ✅ | ✅
 Log In  | ❌ | ❌ | ⚙️
 Revoke Refresh Token / Revoke Session | ❌ | ❌ | ⚙️
 Get an Access Token using Refresh Token | ❌ | ❌ | ⚙️

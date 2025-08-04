@@ -1,11 +1,18 @@
+export interface AppErrorParams {
+    http_status_code?: number;
+}
+
 export class AppError extends Error { 
+    private _http_status_code: number;
+
     constructor(
         message?: string,
-        private _http_status_code: number = 400,
+        app_error_params?: AppErrorParams,
     ) {
         super(message);
-        this.name = "AppError";
-        this._http_status_code = _http_status_code;
+        this.name = AppError.name;
+        const BAD_REQUEST = 400;
+        this._http_status_code = app_error_params?.http_status_code ?? BAD_REQUEST;
     }
 
     get http_status_code() {

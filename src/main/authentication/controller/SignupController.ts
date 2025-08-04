@@ -6,6 +6,8 @@ import { autoInjectable, inject } from "tsyringe";
 import argon2 from "argon2";
 import AppError from "../../shared/error/AppError";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import ValidationError from "../../shared/error/ValidationError";
+import UniqueConstraintError from "../../shared/error/UniqueConstraintError";
 
 interface ICredentials {
     login?: unknown;
@@ -57,7 +59,7 @@ export class SignupController {
             if (error instanceof PrismaClientKnownRequestError) {
                 const UNIQUE_CONSTRAINT_ERROR = "P2002";
                 if (error.code = UNIQUE_CONSTRAINT_ERROR) {
-                    throw new AppError("User login already registered");
+                    throw new UniqueConstraintError(`Login ${credentials.login} is already registered`);
                 }
             }
             throw error;
@@ -81,18 +83,18 @@ export class SignupController {
 
     private static normalizeCredentials(credentials: ICredentials): ICredentialsNormalized {
         // type checking
-        if (typeof(credentials.login) !== "string") throw new AppError("Login must be a string value");
-        if (typeof(credentials.password) !== "string") throw new AppError("Password must be a string value");
+        if (typeof(credentials.login) !== "string") throw new ValidationError("Login must be a string value");
+        if (typeof(credentials.password) !== "string") throw new ValidationError("Password must be a string value");
         // login validation
         const login: string = credentials.login;
         const isLoginCharactersValid = !/[^0-9a-zA-Z._\-]/g.test(login);
-        if (!isLoginCharactersValid) throw new AppError("Login must have only valid characters [0-9a-zA-Z._-]");
+        if (!isLoginCharactersValid) throw new ValidationError("Login must have only valid characters [0-9a-zA-Z._-]");
         const isLoginLengthValid = login.length >= 5 && login.length <= 100;
-        if (!isLoginLengthValid) throw new AppError("Login must have between 5 and 100 characters (both included)");
+        if (!isLoginLengthValid) throw new ValidationError("Login must have between 5 and 100 characters (both included)");
         // password validation
         const password: string = credentials.password;
         const isPasswordCharactersLengthValid = password.length >= 8;
-        if (!isPasswordCharactersLengthValid) throw new AppError("Password must have at least 8 characters");
+        if (!isPasswordCharactersLengthValid) throw new ValidationError("Password must have at least 8 characters");
         
         return { login, password };
     }

@@ -331,8 +331,8 @@ describe("POST /signup", function () {
             .expect(400);
             
         const response_body = response.body;
-        expect(response_body).toHaveProperty("error", "AppError");
-        expect(response_body).toHaveProperty("message", "User login already registered");
+        expect(response_body).toHaveProperty("error", "UniqueConstraintError");
+        expect(response_body).toHaveProperty("message", `Login ${request_body.login} is already registered`);
     })
 
     describe("invalid login", function () {
@@ -347,7 +347,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "AppError");
+            expect(response_body).toHaveProperty("error", "ValidationError");
             expect(response_body).toHaveProperty("message", "Login must be a string value");
         });
 
@@ -362,7 +362,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "AppError");
+            expect(response_body).toHaveProperty("error", "ValidationError");
             expect(response_body).toHaveProperty("message", "Login must be a string value");
         });
         
@@ -376,7 +376,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "AppError");
+            expect(response_body).toHaveProperty("error", "ValidationError");
             expect(response_body).toHaveProperty("message", "Login must be a string value");
         });
 
@@ -391,7 +391,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "AppError");
+            expect(response_body).toHaveProperty("error", "ValidationError");
             expect(response_body).toHaveProperty("message", "Login must have only valid characters [0-9a-zA-Z._-]");
         });
         
@@ -406,7 +406,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "AppError");
+            expect(response_body).toHaveProperty("error", "ValidationError");
             expect(response_body).toHaveProperty("message", "Login must have between 5 and 100 characters (both included)");
         });
         
@@ -421,7 +421,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "AppError");
+            expect(response_body).toHaveProperty("error", "ValidationError");
             expect(response_body).toHaveProperty("message", "Login must have between 5 and 100 characters (both included)");
         });
     });
@@ -438,7 +438,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "AppError");
+            expect(response_body).toHaveProperty("error", "ValidationError");
             expect(response_body).toHaveProperty("message", "Password must be a string value");
         });
 
@@ -453,7 +453,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "AppError");
+            expect(response_body).toHaveProperty("error", "ValidationError");
             expect(response_body).toHaveProperty("message", "Password must be a string value");
         });
         
@@ -467,7 +467,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "AppError");
+            expect(response_body).toHaveProperty("error", "ValidationError");
             expect(response_body).toHaveProperty("message", "Password must be a string value");
         });
         
@@ -482,7 +482,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "AppError");
+            expect(response_body).toHaveProperty("error", "ValidationError");
             expect(response_body).toHaveProperty("message", "Password must have at least 8 characters");
         });
     });

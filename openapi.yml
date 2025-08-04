@@ -38,7 +38,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 name: "ValidationError"
-                message: "Password can't have more than 72 bytes"
+                message: "Login must have only valid characters [0-9a-zA-Z._-]"
         "403":
           description: "Login already taken"
           content:
@@ -47,7 +47,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 name: "UniqueConstraintError"
-                message: "Login XPTO is already registered"
+                message: "Login new.login is already registered"
         "5XX":
           description: "Something wrong happend"
           content:
@@ -192,9 +192,11 @@ components:
       properties:
         login:
           type: string
+          example: username.login
         password:
           type: string
           format: password
+          example: p455w0rd
       required:
         - login
         - password
