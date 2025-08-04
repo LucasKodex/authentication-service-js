@@ -328,12 +328,39 @@ describe("POST /signup", function () {
         const response = await request(app)
             .post(SIGNUP_ENDPOINT)
             .send(request_body)
-            .expect(400);
+            .expect(403);
             
         const response_body = response.body;
         expect(response_body).toHaveProperty("error", "UniqueConstraintError");
         expect(response_body).toHaveProperty("message", `Login ${request_body.login} is already registered`);
-    })
+    });
+
+    it("should not register when prisma throw an error different of P2002 (Unique Constraint Error)", async function () {
+        const RAW_QUERY_FAILED = "P2010";
+        const _CLIENT_VERSION = "6.8.2" // not relevant
+        prisma_mock.user.create.mockRejectedValue(
+            new PrismaClientKnownRequestError(
+                faker.lorem.words({ min: 10, max: 50 }),
+                {
+                    code: RAW_QUERY_FAILED,
+                    clientVersion: _CLIENT_VERSION,
+                }
+            ),
+        );
+        
+        const request_body = {
+            login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, { min: MIN_LOGIN_LENGTH, max: MAX_LOGIN_LENGTH }),
+            password: faker.string.sample({ min: MIN_PASSWORD_LENGTH, max: 1_000 }),
+        };
+        const response = await request(app)
+            .post(SIGNUP_ENDPOINT)
+            .send(request_body)
+            .expect(500);
+            
+        const response_body = response.body;
+        expect(response_body).toHaveProperty("error", "Internal Server Error");
+        expect(response_body).toHaveProperty("message", "Ops... Something went wrong!");
+    });
 
     describe("invalid login", function () {
         it("should not register a user with a numeric type login", async function () {

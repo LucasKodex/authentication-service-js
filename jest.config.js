@@ -12,4 +12,7 @@ module.exports = {
     "/node_modules/",
     "/dist/",
   ],
+  coveragePathIgnorePatterns: [
+    "/test",
+  ],
 };

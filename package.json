@@ -11,7 +11,7 @@
     "build": "tsc --build",
     "clean": "tsc --build --clean",
     "start": "node dist/main/index.js",
-    "test": "jest --passWithNoTests --detectOpenHandles",
+    "test": "jest --passWithNoTests --detectOpenHandles --coverage",
     "db:sync": "prisma generate && prisma migrate deploy"
   },
   "dependencies": {

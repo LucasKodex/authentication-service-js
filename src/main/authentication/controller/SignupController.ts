@@ -33,7 +33,7 @@ export class SignupController {
         const password_hash = await this.argon2_lib!.hash(credentials.password);
         
         // try to save user on database, could trhow a non unique constraint error
-        const DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE ?? "USER";
+        const DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE!;
         let user;
         try {
             user = await this.prisma!.user.create({
@@ -58,15 +58,19 @@ export class SignupController {
         } catch (error) {
             if (error instanceof PrismaClientKnownRequestError) {
                 const UNIQUE_CONSTRAINT_ERROR = "P2002";
-                if (error.code = UNIQUE_CONSTRAINT_ERROR) {
-                    throw new UniqueConstraintError(`Login ${credentials.login} is already registered`);
+                if (error.code == UNIQUE_CONSTRAINT_ERROR) {
+                    const UNAUTHORIZED_HTTP_STATUS_CODE = 403;
+                    throw new UniqueConstraintError(
+                        `Login ${credentials.login} is already registered`,
+                        { http_status_code: UNAUTHORIZED_HTTP_STATUS_CODE },
+                    );
                 }
             }
             throw error;
         }
 
         // generate signed jwt
-        const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY ?? "insecure_key_611c4aa012a4fe291fd5498c96f24c9b";
+        const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY!;
         const refresh_token = this.jwt_lib!.sign({
             user_uid: user.uid,
             user_login: user.login,

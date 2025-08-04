@@ -9,7 +9,7 @@ const service = new SwaggerUiService();
 
 export const router = Router();
 
-const openapiSpecPath = process.env.OPENAPI_SPECIFICATION_FILE_PATH ?? "./openapi.yml";
+const openapiSpecPath = process.env.OPENAPI_SPECIFICATION_FILE_PATH!;
 const openapiSpec = service.getOpenApiSpec(openapiSpecPath); 
 
 router.use("/", swaggerUi.serve, swaggerUi.setup(openapiSpec));
