@@ -9,6 +9,7 @@ import Argon2Mock from "../shared/mocks/Argon2Mock";
 import JwtMock from "../shared/mocks/JwtMock";
 import { faker } from '@faker-js/faker';
 import { randomUUID } from "node:crypto";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 const SIGNUP_ENDPOINT = "/signup";
 
@@ -72,7 +73,6 @@ describe("POST /signup", function () {
         
         const EXPECTED_DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE;
 
-        const SALT_ROUNDS = 12;
         expect(argon2_mock.hash).toHaveBeenCalledWith(request_body.password);
         expect(argon2_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
 
@@ -129,7 +129,10 @@ describe("POST /signup", function () {
 
         
 
-        const request_body = { login: MOCKED_CREATED_USER.login, password: "password" };
+        const request_body = {
+            login: MOCKED_CREATED_USER.login,
+            password: faker.string.sample({ min: MIN_PASSWORD_LENGTH, max: 1_000 }),
+        };
         const response = await request(app)
             .post(SIGNUP_ENDPOINT)
             .send(request_body)
@@ -137,7 +140,6 @@ describe("POST /signup", function () {
         
         const EXPECTED_DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE;
 
-        const SALT_ROUNDS = 12;
         expect(argon2_mock.hash).toHaveBeenCalledWith(request_body.password);
         expect(argon2_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
 
@@ -194,7 +196,10 @@ describe("POST /signup", function () {
 
         
 
-        const request_body = { login: MOCKED_CREATED_USER.login, password: "password" };
+        const request_body = {
+            login: MOCKED_CREATED_USER.login,
+            password: faker.string.sample({ min: MIN_PASSWORD_LENGTH, max: 1_000 }),
+        };
         const response = await request(app)
             .post(SIGNUP_ENDPOINT)
             .send(request_body)
@@ -202,7 +207,6 @@ describe("POST /signup", function () {
         
         const EXPECTED_DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE;
 
-        const SALT_ROUNDS = 12;
         expect(argon2_mock.hash).toHaveBeenCalledWith(request_body.password);
         expect(argon2_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
 
@@ -269,7 +273,6 @@ describe("POST /signup", function () {
         
         const EXPECTED_DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE;
 
-        const SALT_ROUNDS = 12;
         expect(argon2_mock.hash).toHaveBeenCalledWith(request_body.password);
         expect(argon2_mock.hash).toHaveReturnedWith(MOCKED_CREATED_USER.hashed_password);
 
@@ -305,11 +308,38 @@ describe("POST /signup", function () {
         expect(response_body).toHaveProperty("refresh_token", MOCKED_JWT_TOKEN);
     });
 
+    it("should not register when using a login already taken", async function () {
+        const UNIQUE_CONSTRAINT_ERROR = "P2002";
+        const _CLIENT_VERSION = "6.8.2" // not relevant
+        prisma_mock.user.create.mockRejectedValue(
+            new PrismaClientKnownRequestError(
+                faker.lorem.words({ min: 10, max: 50 }),
+                {
+                    code: UNIQUE_CONSTRAINT_ERROR,
+                    clientVersion: _CLIENT_VERSION,
+                }
+            ),
+        );
+        
+        const request_body = {
+            login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, { min: MIN_LOGIN_LENGTH, max: MAX_LOGIN_LENGTH }),
+            password: faker.string.sample({ min: MIN_PASSWORD_LENGTH, max: 1_000 }),
+        };
+        const response = await request(app)
+            .post(SIGNUP_ENDPOINT)
+            .send(request_body)
+            .expect(400);
+            
+        const response_body = response.body;
+        expect(response_body).toHaveProperty("error", "AppError");
+        expect(response_body).toHaveProperty("message", "User login already registered");
+    })
+
     describe("invalid login", function () {
         it("should not register a user with a numeric type login", async function () {
             const request_body = {
                 login: faker.number.int({ min: 10_000_000, max: 999_999_999 }),
-                password: "password",
+                password: faker.string.sample({ min: MIN_PASSWORD_LENGTH, max: 1_000 }),
             };
             const response = await request(app)
                 .post(SIGNUP_ENDPOINT)
@@ -317,14 +347,14 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("error", "AppError");
             expect(response_body).toHaveProperty("message", "Login must be a string value");
         });
 
         it("should not register a user with a null login", async function () {
             const request_body = {
                 login: null,
-                password: "password",
+                password: faker.string.sample({ min: MIN_PASSWORD_LENGTH, max: 1_000 }),
             };
             const response = await request(app)
                 .post(SIGNUP_ENDPOINT)
@@ -332,13 +362,13 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("error", "AppError");
             expect(response_body).toHaveProperty("message", "Login must be a string value");
         });
         
         it("should not register a user with a undefined login", async function () {
             const request_body = {
-                password: "password",
+                password: faker.string.sample({ min: MIN_PASSWORD_LENGTH, max: 1_000 }),
             };
             const response = await request(app)
                 .post(SIGNUP_ENDPOINT)
@@ -346,14 +376,14 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("error", "AppError");
             expect(response_body).toHaveProperty("message", "Login must be a string value");
         });
 
         it("should not register a user with a login using invalid characters", async function () {
             const request_body = {
                 login: "valid.login.until.$",
-                password: "password",
+                password: faker.string.sample({ min: MIN_PASSWORD_LENGTH, max: 1_000 }),
             };
             const response = await request(app)
                 .post(SIGNUP_ENDPOINT)
@@ -361,14 +391,14 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("error", "AppError");
             expect(response_body).toHaveProperty("message", "Login must have only valid characters [0-9a-zA-Z._-]");
         });
         
         it(`should not register a user with a login less than ${MIN_LOGIN_LENGTH} characters`, async function () {
             const request_body = {
                 login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, MIN_LOGIN_LENGTH - 1),
-                password: "password",
+                password: faker.string.sample({ min: MIN_PASSWORD_LENGTH, max: 1_000 }),
             };
             const response = await request(app)
                 .post(SIGNUP_ENDPOINT)
@@ -376,14 +406,14 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("error", "AppError");
             expect(response_body).toHaveProperty("message", "Login must have between 5 and 100 characters (both included)");
         });
         
         it(`should not register a user with a login more than ${MAX_LOGIN_LENGTH} characters`, async function () {
             const request_body = {
                 login: faker.string.fromCharacters(VALID_LOGIN_CHARACTERS, MAX_LOGIN_LENGTH + 1),
-                password: "password"
+                password: faker.string.sample({ min: MIN_PASSWORD_LENGTH, max: 1_000 }),
             };
             const response = await request(app)
                 .post(SIGNUP_ENDPOINT)
@@ -391,7 +421,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("error", "AppError");
             expect(response_body).toHaveProperty("message", "Login must have between 5 and 100 characters (both included)");
         });
     });
@@ -408,7 +438,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("error", "AppError");
             expect(response_body).toHaveProperty("message", "Password must be a string value");
         });
 
@@ -423,7 +453,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("error", "AppError");
             expect(response_body).toHaveProperty("message", "Password must be a string value");
         });
         
@@ -437,7 +467,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("error", "AppError");
             expect(response_body).toHaveProperty("message", "Password must be a string value");
         });
         
@@ -452,7 +482,7 @@ describe("POST /signup", function () {
                 .expect(400);
                 
             const response_body = response.body;
-            expect(response_body).toHaveProperty("error", "Error");
+            expect(response_body).toHaveProperty("error", "AppError");
             expect(response_body).toHaveProperty("message", "Password must have at least 8 characters");
         });
     });

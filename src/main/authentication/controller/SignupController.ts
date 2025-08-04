@@ -4,6 +4,8 @@ import { RedisClientPoolType } from "redis";
 import jwt from "jsonwebtoken";
 import { autoInjectable, inject } from "tsyringe";
 import argon2 from "argon2";
+import AppError from "../../shared/error/AppError";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 interface ICredentials {
     login?: unknown;
@@ -30,25 +32,36 @@ export class SignupController {
         
         // try to save user on database, could trhow a non unique constraint error
         const DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE ?? "USER";
-        const user = await this.prisma!.user.create({
-            data: {
-                login: credentials.login,
-                hashed_password: password_hash,
-                role: {
-                    connectOrCreate: {
-                        where: {
-                            role: DEFAULT_USER_ROLE,
-                        },
-                        create: {
-                            role: DEFAULT_USER_ROLE,
+        let user;
+        try {
+            user = await this.prisma!.user.create({
+                data: {
+                    login: credentials.login,
+                    hashed_password: password_hash,
+                    role: {
+                        connectOrCreate: {
+                            where: {
+                                role: DEFAULT_USER_ROLE,
+                            },
+                            create: {
+                                role: DEFAULT_USER_ROLE,
+                            }
                         }
-                    }
+                    },
                 },
-            },
-            include: {
-                role: true,
-            },
-        });
+                include: {
+                    role: true,
+                },
+            });
+        } catch (error) {
+            if (error instanceof PrismaClientKnownRequestError) {
+                const UNIQUE_CONSTRAINT_ERROR = "P2002";
+                if (error.code = UNIQUE_CONSTRAINT_ERROR) {
+                    throw new AppError("User login already registered");
+                }
+            }
+            throw error;
+        }
 
         // generate signed jwt
         const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY ?? "insecure_key_611c4aa012a4fe291fd5498c96f24c9b";
@@ -68,18 +81,18 @@ export class SignupController {
 
     private static normalizeCredentials(credentials: ICredentials): ICredentialsNormalized {
         // type checking
-        if (typeof(credentials.login) !== "string") throw new Error("Login must be a string value");
-        if (typeof(credentials.password) !== "string") throw new Error("Password must be a string value");
+        if (typeof(credentials.login) !== "string") throw new AppError("Login must be a string value");
+        if (typeof(credentials.password) !== "string") throw new AppError("Password must be a string value");
         // login validation
         const login: string = credentials.login;
         const isLoginCharactersValid = !/[^0-9a-zA-Z._\-]/g.test(login);
-        if (!isLoginCharactersValid) throw new Error("Login must have only valid characters [0-9a-zA-Z._-]");
+        if (!isLoginCharactersValid) throw new AppError("Login must have only valid characters [0-9a-zA-Z._-]");
         const isLoginLengthValid = login.length >= 5 && login.length <= 100;
-        if (!isLoginLengthValid) throw new Error("Login must have between 5 and 100 characters (both included)");
+        if (!isLoginLengthValid) throw new AppError("Login must have between 5 and 100 characters (both included)");
         // password validation
         const password: string = credentials.password;
         const isPasswordCharactersLengthValid = password.length >= 8;
-        if (!isPasswordCharactersLengthValid) throw new Error("Password must have at least 8 characters");
+        if (!isPasswordCharactersLengthValid) throw new AppError("Password must have at least 8 characters");
         
         return { login, password };
     }
