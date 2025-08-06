@@ -1,0 +1,32 @@
+services:
+  app:
+    build: .
+    ports:
+      - 80:80
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+  
+  postgres:
+    image: postgres
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-Uusername", "-dauth" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+  
+  redis:
+    image: redis
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
